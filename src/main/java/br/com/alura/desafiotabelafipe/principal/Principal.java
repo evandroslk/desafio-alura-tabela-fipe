@@ -1,5 +1,7 @@
 package br.com.alura.desafiotabelafipe.principal;
 
+import br.com.alura.desafiotabelafipe.model.DadosModelos;
+import br.com.alura.desafiotabelafipe.model.DadosTabelaFipe;
 import br.com.alura.desafiotabelafipe.model.DadosTipoVeiculo;
 import br.com.alura.desafiotabelafipe.service.ConsumoAPI;
 import br.com.alura.desafiotabelafipe.service.ConverteDados;
@@ -13,7 +15,7 @@ public class Principal {
     private Scanner leitura = new Scanner(System.in);
     private ConsumoAPI consumoAPI = new ConsumoAPI();
     private ConverteDados conversor = new ConverteDados();
-    private final String URL_API_CARROS = "https://parallelum.com.br/fipe/api/v1/carros/marcas";
+    private final String URL_API_CARROS = "https://parallelum.com.br/fipe/api/v1/carros/marcas/";
 
     public void exibeMenuInicial() {
         System.out.println("----------------------------------------");
@@ -58,6 +60,45 @@ public class Principal {
                 .forEach(d -> {
             System.out.println("Código: " + d.codigo() + " | " +
                 "Nome: " + d.nome());
+        });
+
+        var codigoSelecionado = leitura.nextLine();
+
+        json = consumoAPI
+                .obterDados(URL_API_CARROS + codigoSelecionado + "/modelos/");
+        var dadosModelos = conversor.obterDados(json, DadosModelos.class);
+
+        dadosModelos.modelos().stream().forEach(d -> {
+            System.out.println("Código: " + d.codigo() + " | " +
+                    "Nome: " + d.nome());
+        });
+        System.out.println("Digite um trecho do modelo do veículo que deseja pesquisar");
+
+        var trechoModelo = leitura.nextLine();
+        dadosModelos.modelos().stream()
+                .filter(d -> d.nome().toUpperCase().contains(trechoModelo.toUpperCase()))
+                .forEach(d -> {
+                        System.out.println("Código: " + d.codigo() + " | " +
+                                "Nome: " + d.nome());
+                });
+        System.out.println("Selecione um dos modelos acima pelo código");
+
+        var codigoModelo = leitura.nextLine();
+
+        json = consumoAPI
+                .obterDados(URL_API_CARROS + codigoSelecionado + "/modelos/"
+                    + codigoModelo + "/anos/");
+        var dadosAnos = conversor.obterDados(json, DadosTipoVeiculo[].class);
+
+        Arrays.stream(dadosAnos).forEach(d -> {
+            var jsonFipe = consumoAPI
+                    .obterDados(URL_API_CARROS + codigoSelecionado + "/modelos/"
+                            + codigoModelo + "/anos/" + d.codigo());
+            var dadosTabelaFipe = conversor.obterDados(jsonFipe, DadosTabelaFipe.class);
+            System.out.println(dadosTabelaFipe.modelo()
+                    + " ano: " + dadosTabelaFipe.anoModelo()
+                    + " valor: " + dadosTabelaFipe.valor()
+                    + " combustível: " + dadosTabelaFipe.combustivel());
         });
     }
 
